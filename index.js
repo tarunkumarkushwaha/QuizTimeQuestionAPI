@@ -16,13 +16,21 @@ app.get('/hello', (req, res) => {
   res.send('Hello Worlddd!')
 })
 
-// app.get('/index', (req, res) => {
-//   res.sendFile('H:/codes/BackEnd Projects/QuizTimeQuestionAPI/servefiles/index.html')
-// })
-
 app.get('/', (req, res) => {
   res.sendFile('templetes/index.html', { root: __dirname })   // set root directory
 })
+
+app.get('/questions/:topic', async (req, res) => {
+  const topic = req.params.topic;
+
+  try {
+    const module = await import(`./public/questions/${topic}.js`);
+    res.json(module.default);
+  } catch (error) {
+    res.status(404).json({ error: 'Questions file not found' });
+  }
+});
+
 
 app.post('/', (req, res) => {
   res.send('Hello post reeq')
@@ -40,13 +48,10 @@ app.get('/questiondata/:data', (req, res) => {
 let AIquestions = `[{"question": "HTML stands for?","option1": "Hypertext Markup Language","option2": "Hyper Makeup Language","option3": "Web development","option4": "Hamara Mark Language","correctresponse": "Hypertext Markup Language","time": 1} ,]`;
 
 function convertJsonString(input) {
-  // Remove the triple backticks and any "json" annotation
   const cleaned = input
-    .replace(/```json\s*/g, '') // remove starting ```json
-    .replace(/```/g, '')        // remove ending ```
+    .replace(/```json\s*/g, '') 
+    .replace(/```/g, '')        
     .trim();
-
-  // Parse into a JavaScript object
   let parsed;
   try {
     parsed = JSON.parse(cleaned);
@@ -55,7 +60,6 @@ function convertJsonString(input) {
     return [];
   }
 
-  // Optionally, map it to ensure only desired keys remain
   return parsed.map(item => ({
     question: item.question,
     option1: item.option1,
