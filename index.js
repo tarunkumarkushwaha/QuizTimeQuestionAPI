@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const blog = require("./routes/blogs.js");
 require("dotenv").config();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -8,7 +9,23 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 const app = express();
 const port = process.env.PORT || 3000;
 
+const allowedOrigins = [
+  "https://quiztimefrontend.onrender.com", // your deployed frontend
+  "http://localhost:5173", // optional: keep for local dev
+  "http://localhost:3000" // optional: keep for local dev
+];
 
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    }
+  })
+);
 app.use(express.static('public'))      // to use files publicly
 app.use('/blogs', blog)
 
