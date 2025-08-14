@@ -63,7 +63,7 @@ app.get('/questiondata/:data', (req, res) => {
 // AI stuff 
 
 // fixed format
-let AIquestions = `[{"question": "HTML stands for?","option1": "Hypertext Markup Language","option2": "Hyper Makeup Language","option3": "Web development","option4": "Hamara Mark Language","correctresponse": "Hypertext Markup Language","time": 1} ,]`;
+let AIquestions = `[{"question": "question","option1": "optiona","option2": "optionb","option3": "optionc","option4": "optiond","correctresponse": "optiona","time": 1} ,]`;
 
 function convertJsonString(input) {
   const cleaned = input
@@ -91,26 +91,30 @@ function convertJsonString(input) {
 
 app.get("/ask", async (req, res) => {
   try {
-    const prompt = `${req.query.prompt} questions in this format ${AIquestions}`; 
+    const prompt = req.query.prompt;
+    const count = req.query.count || 10;
 
-    if (!prompt) {
-      return res.status(400).json({ error: "Prompt is required" });
+    if (!prompt || !count) {
+      return res.status(400).json({ error: "Topic and count are required" });
     }
 
-    // Run Gemini API request
-    const result = await model.generateContent(prompt);
+    const topic = `${prompt} ${count} questions in this format ${AIquestions}`;
+
+    const result = await model.generateContent(topic);
     const response = await result.response;
     const text = response.text();
 
-    // Send JSON response
+    const parsedQuestions = convertJsonString(text);
+
     res.json({
-      time : [...convertJsonString(text)].length ,
-      question: convertJsonString(text),
+      time: parsedQuestions.length,
+      question: parsedQuestions
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-})
+});
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
