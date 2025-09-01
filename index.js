@@ -42,5 +42,5 @@ app.use("/quiz", quizRoutes);
 app.use("/ask", aiRoutes);
 
 app.listen(port, () => {
-  console.log(`🚀 Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });

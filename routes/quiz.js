@@ -1,24 +1,64 @@
 const express = require("express");
 const router = express.Router();
-const Question = require("../models/Question");
+const getQuestionModel = require("../models/question");
 
-// dynamic import for static files
-router.get('/questions/:topic', async (req, res) => {
-  const topic = req.params.topic;
-
+router.get("/:topic", async (req, res) => {
   try {
-    const module = await import(`./public/questions/${topic}.js`);
-    res.json(module.default);
-  } catch (error) {
-    res.status(404).json({ error: 'Questions file not found' });
+    const topic = req.params.topic;
+    const Question = getQuestionModel(topic);   
+    const allQs = await Question.find();
+    res.json(allQs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Example MongoDB insert (optional)
-router.post("/add", async (req, res) => {
+// Add a new question for a topic
+router.post("/:topic", async (req, res) => {
   try {
+    const topic = req.params.topic;
+    const Question = getQuestionModel(topic);
     const newQ = await Question.create(req.body);
     res.json(newQ);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get single question by ID
+router.get("/:topic/:id", async (req, res) => {
+  try {
+    const { topic, id } = req.params;
+    const Question = getQuestionModel(topic);
+    const q = await Question.findById(id);
+    if (!q) return res.status(404).json({ error: "Question not found" });
+    res.json(q);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update question by ID
+router.put("/:topic/:id", async (req, res) => {
+  try {
+    const { topic, id } = req.params;
+    const Question = getQuestionModel(topic);
+    const updatedQ = await Question.findByIdAndUpdate(id, req.body, { new: true });
+    if (!updatedQ) return res.status(404).json({ error: "Question not found" });
+    res.json(updatedQ);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete question by ID
+router.delete("/:topic/:id", async (req, res) => {
+  try {
+    const { topic, id } = req.params;
+    const Question = getQuestionModel(topic);
+    const deletedQ = await Question.findByIdAndDelete(id);
+    if (!deletedQ) return res.status(404).json({ error: "Question not found" });
+    res.json({ message: "Deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

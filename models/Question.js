@@ -6,4 +6,10 @@ const questionSchema = new mongoose.Schema({
   answer: String
 });
 
-module.exports = mongoose.model("Javascript", questionSchema, "javascript");
+function getQuestionModel(topic) {
+  const name = topic.toLowerCase();
+  return mongoose.model(name, questionSchema, name);
+}
+
+module.exports = getQuestionModel;
+
