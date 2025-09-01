@@ -210,4 +210,4 @@ let htmlquestions = {
 ]
 }
 
-export default htmlquestions
+module.exports =  htmlquestions

@@ -383,4 +383,4 @@ let funnyquestions = {
     ]
 };
 
-export default funnyquestions;
+module.exports =  funnyquestions;

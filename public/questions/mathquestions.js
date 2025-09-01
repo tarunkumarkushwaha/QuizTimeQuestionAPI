@@ -274,4 +274,4 @@ let mathquestions = {
     ]
 };
 
-export default mathquestions;
+module.exports =  mathquestions;

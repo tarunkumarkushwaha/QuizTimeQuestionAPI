@@ -274,4 +274,4 @@ let reasoningquestions = {
     ]
 };
 
-export default reasoningquestions;
+module.exports =  reasoningquestions;

@@ -274,4 +274,4 @@ let sciencequestions = {
     ],
 };
 
-export default sciencequestions;
+module.exports = sciencequestions;

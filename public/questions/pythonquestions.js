@@ -274,4 +274,4 @@ let pythonquestions = {
     ]
 };
 
-export default pythonquestions;
+module.exports =  pythonquestions;

@@ -274,4 +274,4 @@ let indianGKQuestions = {
     ]
 }
 
-export default indianGKQuestions;
+module.exports =  indianGKQuestions;

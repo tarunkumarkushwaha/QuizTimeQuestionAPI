@@ -505,4 +505,4 @@ const wordpressquestions = {
 };
 
 
-export default wordpressquestions
+module.exports = wordpressquestions

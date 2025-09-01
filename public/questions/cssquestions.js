@@ -166,4 +166,4 @@ let cssquestions = {
     ],
 };
 
-export default cssquestions;
+module.exports =  cssquestions;

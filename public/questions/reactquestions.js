@@ -182,4 +182,4 @@ let reactquestions = {
     },]
 }
 
-export default reactquestions
+module.exports =  reactquestions
