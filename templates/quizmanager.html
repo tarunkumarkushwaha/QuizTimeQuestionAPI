@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz Manager</title>
+</head>
+<body style="font-family: Arial; background:#f4f6f9; margin:0; padding:20px;">
+
+  <h1 style="text-align:center; color:#333;">Quiz Manager</h1>
+  <a href="/logout">Logout</a>
+
+  <!-- Question Form -->
+  <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:20px;">
+    <h2 style="margin-bottom:10px; color:#444;">+ Add Question</h2>
+    <form id="questionForm" onsubmit="submitQuestion(event)">
+      <input type="text" id="question" placeholder="Enter question" required
+             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+      <input type="text" id="option1" placeholder="Option 1" required
+             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+      <input type="text" id="option2" placeholder="Option 2" required
+             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+      <input type="text" id="option3" placeholder="Option 3" required
+             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+      <input type="text" id="option4" placeholder="Option 4" required
+             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+      <input type="text" id="correctresponse" placeholder="Correct Answer" required
+             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+      <input type="number" id="time" placeholder="Time (seconds)" required
+             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+      <input type="text" id="subject" placeholder="Subject name" required
+             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+      <button type="submit"
+              style="padding:10px 20px; background:#2196F3; color:#fff; border:none; border-radius:5px; cursor:pointer;">
+        Add Question
+      </button>
+    </form>
+  </div>
+
+  <!-- Question List -->
+  <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+    <h2 style="margin-bottom:10px; color:#444;">📋 All Questions</h2>
+    <div id="questionList"></div>
+  </div>
+
+<script>
+  const API_URL = "http://localhost:3000";
+
+  async function submitQuestion(e) {
+    e.preventDefault();
+    const data = {
+      question: document.getElementById("question").value,
+      option1: document.getElementById("option1").value,
+      option2: document.getElementById("option2").value,
+      option3: document.getElementById("option3").value,
+      option4: document.getElementById("option4").value,
+      correctresponse: document.getElementById("correctresponse").value,
+      time: parseInt(document.getElementById("time").value),
+    };
+    const subject = document.getElementById("subject").value;
+
+    const res = await fetch(`${API_URL}/quiz/${subject}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      alert("Question added!");
+      loadQuestions(subject);
+      document.getElementById("questionForm").reset();
+    } else {
+      alert("Error adding question");
+    }
+  }
+
+  async function loadQuestions(subject="css") {
+    const res = await fetch(`${API_URL}/quiz/${subject}`);
+    const questions = await res.json();
+    const list = document.getElementById("questionList");
+    list.innerHTML = "";
+    questions.forEach(q => {
+      const div = document.createElement("div");
+      div.style = "padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; background:#fafafa;";
+      div.innerHTML = `
+        <b>${q.question}</b><br>
+        1. ${q.option1} <br>
+        2. ${q.option2} <br>
+        3. ${q.option3} <br>
+        4. ${q.option4} <br>
+       Correct: ${q.correctresponse} <br>
+         Time: ${q.time}s
+        <br><button onclick="deleteQuestion('${subject}','${q._id}')"
+        style="margin-top:5px; padding:5px 10px; background:#e74c3c; color:#fff; border:none; border-radius:5px; cursor:pointer;">Delete</button>
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  async function deleteQuestion(subject, id) {
+    if (!confirm("Delete this question?")) return;
+    const res = await fetch(`${API_URL}/quiz/${subject}/${id}`, {
+      method: "DELETE"
+    });
+    if (res.ok) {
+      alert("Deleted!");
+      loadQuestions(subject);
+    } else {
+      alert("Error deleting question");
+    }
+  }
+
+  loadQuestions("biochemistry");
+</script>
+
+</body>
+</html>

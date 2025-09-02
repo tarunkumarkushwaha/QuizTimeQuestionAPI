@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const getQuestionModel = require("../models/question");
+const getQuestionModel = require("../models/Question");
 
 router.get("/:topic", async (req, res) => {
   try {

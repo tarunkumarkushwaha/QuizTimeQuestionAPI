@@ -10,6 +10,10 @@ router.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/templates/index.html"));
 });
 
+router.get("/quiz/quizmanager", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/templates/quizmanager.html"));
+});
+
 router.post("/", (req, res) => {
   res.send("Hello POST req");
 });
