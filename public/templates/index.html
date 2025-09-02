@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quiz API Home</title>
   <style>
-    /* Reset and base styles */
+   
     * {
       margin: 0;
       padding: 0;
@@ -46,7 +46,7 @@
       margin: auto;
     }
 
-    /* Search bar */
+
     form {
       display: flex;
       justify-content: center;
@@ -85,7 +85,6 @@
       background: #005fa3;
     }
 
-    /* Categories grid */
     .categories {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -103,6 +102,10 @@
       text-decoration: none;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
       transition: transform 0.2s, background 0.3s, color 0.3s;
+    }
+
+    .Manager {
+      margin: 10px;
     }
 
     .category:hover {
@@ -133,7 +136,7 @@
       <button type="submit">Generate</button>
     </form>
 
-    <a href="./quiz/quizmanager">quiz Manager</a>
+    <a class="Manager category" href="./quiz/quizmanager">quiz manager</a>
 
     <div class="categories">
       <a class="category" href="/questions/javascriptquestions">JavaScript</a>

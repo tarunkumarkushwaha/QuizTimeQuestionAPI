@@ -7,12 +7,14 @@
 <body style="font-family: Arial; background:#f4f6f9; margin:0; padding:20px;">
 
   <h1 style="text-align:center; color:#333;">Quiz Manager</h1>
-  <a href="/logout">Logout</a>
+  <a style="top: 20px; right: 30px; position: absolute; color:#f70505;" href="/logout">Logout</a>
 
-  <!-- Question Form -->
+
   <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:20px;">
-    <h2 style="margin-bottom:10px; color:#444;">+ Add Question</h2>
+    <h2 id="formTitle" style="margin-bottom:10px; color:#444;">+ Add Question</h2>
     <form id="questionForm" onsubmit="submitQuestion(event)">
+      <input type="hidden" id="editingId">
+
       <input type="text" id="question" placeholder="Enter question" required
              style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
       <input type="text" id="option1" placeholder="Option 1" required
@@ -29,16 +31,21 @@
              style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
       <input type="text" id="subject" placeholder="Subject name" required
              style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
-      <button type="submit"
+      
+      <button type="submit" id="submitBtn"
               style="padding:10px 20px; background:#2196F3; color:#fff; border:none; border-radius:5px; cursor:pointer;">
         Add Question
+      </button>
+      <button type="button" id="cancelEditBtn" onclick="cancelEdit()" 
+              style="display:none; margin-left:10px; padding:10px 20px; background:#777; color:#fff; border:none; border-radius:5px; cursor:pointer;">
+        Cancel
       </button>
     </form>
   </div>
 
   <!-- Question List -->
   <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-    <h2 style="margin-bottom:10px; color:#444;">📋 All Questions</h2>
+    <h2 style="margin-bottom:10px; color:#444;">Questions</h2>
     <div id="questionList"></div>
   </div>
 
@@ -57,18 +64,29 @@
       time: parseInt(document.getElementById("time").value),
     };
     const subject = document.getElementById("subject").value;
+    const editingId = document.getElementById("editingId").value;
 
-    const res = await fetch(`${API_URL}/quiz/${subject}`, {
-      method: "POST",
+    let url = `${API_URL}/quiz/${subject}`;
+    let method = "POST";
+
+    if (editingId) { 
+      url = `${API_URL}/quiz/${subject}/${editingId}`;
+      method = "PUT";
+    }
+
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+
     if (res.ok) {
-      alert("Question added!");
+      alert(editingId ? "Question updated!" : "Question added!");
       loadQuestions(subject);
       document.getElementById("questionForm").reset();
+      resetFormState();
     } else {
-      alert("Error adding question");
+      alert("Error saving question");
     }
   }
 
@@ -86,10 +104,13 @@
         2. ${q.option2} <br>
         3. ${q.option3} <br>
         4. ${q.option4} <br>
-       Correct: ${q.correctresponse} <br>
-         Time: ${q.time}s
-        <br><button onclick="deleteQuestion('${subject}','${q._id}')"
-        style="margin-top:5px; padding:5px 10px; background:#e74c3c; color:#fff; border:none; border-radius:5px; cursor:pointer;">Delete</button>
+        Correct: ${q.correctresponse} <br>
+        Time: ${q.time}s
+        <br>
+        <button onclick="editQuestion('${subject}', '${q._id}')"
+        style="margin-top:5px; padding:5px 10px; background:#f39c12; color:#fff; border:none; border-radius:5px; cursor:pointer;">Edit</button>
+        <button onclick="deleteQuestion('${subject}','${q._id}')"
+        style="margin-top:5px; margin-left:5px; padding:5px 10px; background:#e74c3c; color:#fff; border:none; border-radius:5px; cursor:pointer;">Delete</button>
       `;
       list.appendChild(div);
     });
@@ -108,8 +129,40 @@
     }
   }
 
+  async function editQuestion(subject, id) { 
+    const res = await fetch(`${API_URL}/quiz/${subject}/${id}`);
+    const q = await res.json();
+
+    document.getElementById("editingId").value = id;
+    document.getElementById("formTitle").innerText = "✎ Edit Question";
+    document.getElementById("submitBtn").innerText = "Update Question";
+    document.getElementById("cancelEditBtn").style.display = "inline-block";
+
+    document.getElementById("question").value = q.question;
+    document.getElementById("option1").value = q.option1;
+    document.getElementById("option2").value = q.option2;
+    document.getElementById("option3").value = q.option3;
+    document.getElementById("option4").value = q.option4;
+    document.getElementById("correctresponse").value = q.correctresponse;
+    document.getElementById("time").value = q.time;
+    document.getElementById("subject").value = subject;
+  }
+
+  function cancelEdit() { 
+    document.getElementById("questionForm").reset();
+    resetFormState();
+  }
+
+  function resetFormState() {
+    document.getElementById("editingId").value = "";
+    document.getElementById("formTitle").innerText = "+ Add Question";
+    document.getElementById("submitBtn").innerText = "Add Question";
+    document.getElementById("cancelEditBtn").style.display = "none";
+  }
+
   loadQuestions("biochemistry");
 </script>
 
 </body>
 </html>
+
