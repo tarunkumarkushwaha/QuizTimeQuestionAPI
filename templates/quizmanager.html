@@ -1,104 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Quiz Manager</title>
 </head>
+
 <body style="font-family: Arial; background:#f4f6f9; margin:0; padding:20px;">
 
   <h1 style="text-align:center; color:#333;">Quiz Manager</h1>
   <a style="top: 20px; right: 30px; position: absolute; color:#f70505;" href="/logout">Logout</a>
 
 
-  <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:20px;">
+  <div
+    style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1); margin-bottom:20px;">
     <h2 id="formTitle" style="margin-bottom:10px; color:#444;">+ Add Question</h2>
     <form id="questionForm" onsubmit="submitQuestion(event)">
       <input type="hidden" id="editingId">
 
       <input type="text" id="question" placeholder="Enter question" required
-             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+        style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
       <input type="text" id="option1" placeholder="Option 1" required
-             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+        style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
       <input type="text" id="option2" placeholder="Option 2" required
-             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+        style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
       <input type="text" id="option3" placeholder="Option 3" required
-             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+        style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
       <input type="text" id="option4" placeholder="Option 4" required
-             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+        style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
       <input type="text" id="correctresponse" placeholder="Correct Answer" required
-             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+        style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
       <input type="number" id="time" placeholder="Time (seconds)" required
-             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+        style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
       <input type="text" id="subject" placeholder="Subject name" required
-             style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
-      
+        style="display:block; margin:8px 0; padding:10px; width:95%; border:1px solid #ccc; border-radius:5px;">
+
       <button type="submit" id="submitBtn"
-              style="padding:10px 20px; background:#2196F3; color:#fff; border:none; border-radius:5px; cursor:pointer;">
+        style="padding:10px 20px; background:#2196F3; color:#fff; border:none; border-radius:5px; cursor:pointer;">
         Add Question
       </button>
-      <button type="button" id="cancelEditBtn" onclick="cancelEdit()" 
-              style="display:none; margin-left:10px; padding:10px 20px; background:#777; color:#fff; border:none; border-radius:5px; cursor:pointer;">
+      <button type="button" id="cancelEditBtn" onclick="cancelEdit()"
+        style="display:none; margin-left:10px; padding:10px 20px; background:#777; color:#fff; border:none; border-radius:5px; cursor:pointer;">
         Cancel
       </button>
     </form>
   </div>
 
   <!-- Question List -->
+  <div style="position: relative;">
+    <label for="collection-select"
+      style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Available
+      Subjects:</label>
+    <select id="collection-select"
+      style="display: block; width: 100%; padding-left: 1rem; padding-right: 1rem; padding-top: 0.5rem; padding-bottom: 0.5rem; font-size: 1rem; color: #111827; background-color: #fff; border-width: 1px; border-color: #d1d5db; border-radius: 0.375rem; outline: 2px solid transparent; outline-offset: 2px; transition-property: all; transition-duration: 150ms; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);">
+      <option id="message-display" value="" disabled selected>Loading subjects...</option>
+    </select>
+  </div>
+
   <div style="background:#fff; padding:20px; border-radius:10px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
     <h2 style="margin-bottom:10px; color:#444;">Questions</h2>
     <div id="questionList"></div>
   </div>
 
-<script>
-  const API_URL = "http://localhost:3000";
+  <script>
+    const API_URL = "http://localhost:3000";
+    let allsubject = []
+    let selectedSubject = "css"
 
-  async function submitQuestion(e) {
-    e.preventDefault();
-    const data = {
-      question: document.getElementById("question").value,
-      option1: document.getElementById("option1").value,
-      option2: document.getElementById("option2").value,
-      option3: document.getElementById("option3").value,
-      option4: document.getElementById("option4").value,
-      correctresponse: document.getElementById("correctresponse").value,
-      time: parseInt(document.getElementById("time").value),
-    };
-    const subject = document.getElementById("subject").value;
-    const editingId = document.getElementById("editingId").value;
+    async function submitQuestion(e) {
+      e.preventDefault();
+      const data = {
+        question: document.getElementById("question").value,
+        option1: document.getElementById("option1").value,
+        option2: document.getElementById("option2").value,
+        option3: document.getElementById("option3").value,
+        option4: document.getElementById("option4").value,
+        correctresponse: document.getElementById("correctresponse").value,
+        time: parseInt(document.getElementById("time").value),
+      };
+      // const subject = document.getElementById("subject").value;
+      const subject = selectedSubject
+      const editingId = document.getElementById("editingId").value;
 
-    let url = `${API_URL}/quiz/${subject}`;
-    let method = "POST";
+      let url = `${API_URL}/quiz/${subject}`;
+      let method = "POST";
 
-    if (editingId) { 
-      url = `${API_URL}/quiz/${subject}/${editingId}`;
-      method = "PUT";
+      if (editingId) {
+        url = `${API_URL}/quiz/${subject}/${editingId}`;
+        method = "PUT";
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        alert(editingId ? "Question updated!" : "Question added!");
+        loadQuestions(subject);
+        document.getElementById("questionForm").reset();
+        resetFormState();
+      } else {
+        alert("Error saving question");
+      }
     }
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-
-    if (res.ok) {
-      alert(editingId ? "Question updated!" : "Question added!");
-      loadQuestions(subject);
-      document.getElementById("questionForm").reset();
-      resetFormState();
-    } else {
-      alert("Error saving question");
-    }
-  }
-
-  async function loadQuestions(subject="css") {
-    const res = await fetch(`${API_URL}/quiz/${subject}`);
-    const questions = await res.json();
-    const list = document.getElementById("questionList");
-    list.innerHTML = "";
-    questions.forEach(q => {
-      const div = document.createElement("div");
-      div.style = "padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; background:#fafafa;";
-      div.innerHTML = `
+    async function loadQuestions() {
+      const res = await fetch(`${API_URL}/quiz/${selectedSubject}`);
+      const questions = await res.json();
+      // console.log(questions)
+      const list = document.getElementById("questionList");
+      list.innerHTML = "";
+      questions.forEach(q => {
+        const div = document.createElement("div");
+        div.style = "padding:10px; margin:10px 0; border:1px solid #ddd; border-radius:5px; background:#fafafa;";
+        div.innerHTML = `
         <b>${q.question}</b><br>
         1. ${q.option1} <br>
         2. ${q.option2} <br>
@@ -107,62 +124,99 @@
         Correct: ${q.correctresponse} <br>
         Time: ${q.time}s
         <br>
-        <button onclick="editQuestion('${subject}', '${q._id}')"
+        <button onclick="editQuestion('${selectedSubject}', '${q._id}')"
         style="margin-top:5px; padding:5px 10px; background:#f39c12; color:#fff; border:none; border-radius:5px; cursor:pointer;">Edit</button>
-        <button onclick="deleteQuestion('${subject}','${q._id}')"
+        <button onclick="deleteQuestion('${selectedSubject}','${q._id}')"
         style="margin-top:5px; margin-left:5px; padding:5px 10px; background:#e74c3c; color:#fff; border:none; border-radius:5px; cursor:pointer;">Delete</button>
       `;
-      list.appendChild(div);
-    });
-  }
-
-  async function deleteQuestion(subject, id) {
-    if (!confirm("Delete this question?")) return;
-    const res = await fetch(`${API_URL}/quiz/${subject}/${id}`, {
-      method: "DELETE"
-    });
-    if (res.ok) {
-      alert("Deleted!");
-      loadQuestions(subject);
-    } else {
-      alert("Error deleting question");
+        list.appendChild(div);
+      });
     }
-  }
 
-  async function editQuestion(subject, id) { 
-    const res = await fetch(`${API_URL}/quiz/${subject}/${id}`);
-    const q = await res.json();
+    async function deleteQuestion(subject, id) {
+      if (!confirm("Delete this question?")) return;
+      const res = await fetch(`${API_URL}/quiz/${subject}/${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        alert("Deleted!");
+        loadQuestions(subject);
+      } else {
+        alert("Error deleting question");
+      }
+    }
 
-    document.getElementById("editingId").value = id;
-    document.getElementById("formTitle").innerText = "✎ Edit Question";
-    document.getElementById("submitBtn").innerText = "Update Question";
-    document.getElementById("cancelEditBtn").style.display = "inline-block";
+    async function getAllSubjects(subject, id) {
+      const selectElement = document.getElementById('collection-select');
+      const saveButton = document.getElementById('save-button');
+      const messageDisplay = document.getElementById('message-display');
+      const res = await fetch(`${API_URL}/quiz/allsubjects`, {
+      });
+      if (res.ok) {
+        allsubject = await res.json();
+        allsubject.subjectss.forEach(collectionName => {
+          const option = document.createElement('option');
+          option.value = collectionName;
+          option.textContent = collectionName;
+          selectElement.appendChild(option);
+        });
+        messageDisplay.textContent = 'Select subject';
+        messageDisplay.style.color = '#16a34a';
+      } else {
+        const option = document.createElement('option');
+        option.value = "";
+        option.textContent = "No questions found";
+        selectElement.appendChild(option);
+        messageDisplay.textContent = "No questions found";
+        messageDisplay.style.color = '#ea580c'; // text-orange-600
+        saveButton.disabled = true;
+        saveButton.style.opacity = '0.5';
+        saveButton.style.cursor = 'not-allowed';
+      }
+    }
 
-    document.getElementById("question").value = q.question;
-    document.getElementById("option1").value = q.option1;
-    document.getElementById("option2").value = q.option2;
-    document.getElementById("option3").value = q.option3;
-    document.getElementById("option4").value = q.option4;
-    document.getElementById("correctresponse").value = q.correctresponse;
-    document.getElementById("time").value = q.time;
-    document.getElementById("subject").value = subject;
-  }
+    async function editQuestion(subject, id) {
+      const res = await fetch(`${API_URL}/quiz/${subject}/${id}`);
+      const q = await res.json();
 
-  function cancelEdit() { 
-    document.getElementById("questionForm").reset();
-    resetFormState();
-  }
+      document.getElementById("editingId").value = id;
+      document.getElementById("formTitle").innerText = "✎ Edit Question";
+      document.getElementById("submitBtn").innerText = "Update Question";
+      document.getElementById("cancelEditBtn").style.display = "inline-block";
 
-  function resetFormState() {
-    document.getElementById("editingId").value = "";
-    document.getElementById("formTitle").innerText = "+ Add Question";
-    document.getElementById("submitBtn").innerText = "Add Question";
-    document.getElementById("cancelEditBtn").style.display = "none";
-  }
+      document.getElementById("question").value = q.question;
+      document.getElementById("option1").value = q.option1;
+      document.getElementById("option2").value = q.option2;
+      document.getElementById("option3").value = q.option3;
+      document.getElementById("option4").value = q.option4;
+      document.getElementById("correctresponse").value = q.correctresponse;
+      document.getElementById("time").value = q.time;
+      document.getElementById("subject").value = subject;
+    }
 
-  loadQuestions("biochemistry");
-</script>
+    function cancelEdit() {
+      document.getElementById("questionForm").reset();
+      resetFormState();
+    }
+
+    function resetFormState() {
+      document.getElementById("editingId").value = "";
+      document.getElementById("formTitle").innerText = "+ Add Question";
+      document.getElementById("submitBtn").innerText = "Add Question";
+      document.getElementById("cancelEditBtn").style.display = "none";
+    }
+
+    loadQuestions();
+    getAllSubjects()
+
+    let selectElement = document.getElementById("collection-select")
+
+    selectElement.addEventListener('change', (event) => {
+      selectedSubject = event.target.value;
+      loadQuestions()
+    });
+  </script>
 
 </body>
-</html>
 
+</html>

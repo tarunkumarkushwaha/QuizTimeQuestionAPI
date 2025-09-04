@@ -1,6 +1,37 @@
 const express = require("express");
 const router = express.Router();
 const getQuestionModel = require("../models/Question");
+const mongoose = require("mongoose");
+
+router.delete("/deletesubject/:name", async (req, res) => {
+  const collectionName = req.params.name;
+
+  try {
+    const collections = await mongoose.connection.db.listCollections({ name: collectionName }).toArray();
+
+    if (collections.length === 0) {
+      return res.status(404).json({ error: `Collection '${collectionName}' not found.` });
+    }
+
+    await mongoose.connection.db.dropCollection(collectionName);
+
+    res.status(200).json({ message: `Collection '${collectionName}' deleted successfully.` });
+  } catch (err) {
+    console.error("Error deleting collection:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.get("/allsubjects", async (req, res) => {
+  try {
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    const collectionNames = collections.map(collection => collection.name);
+    res.status(200).json({ subjectss: collectionNames });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 router.get("/:topic", async (req, res) => {
   try {
