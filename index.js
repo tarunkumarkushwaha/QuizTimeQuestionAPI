@@ -38,32 +38,36 @@ app.use(
 );
 
 app.use(express.json());
-app.use(express.static("public"));
+
 
 // Connect DB
 connectDB();
 
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public/templates"));
+// app.use(express.static("public/templates"));
 app.use(session({
   secret: process.env.PASSWORD,
   resave: false,
   saveUninitialized: true
 }));
 
-app.get("/quiz/quizmanager", requireLogin, (req, res) => {
-  res.sendFile(__dirname + "/templates/quizmanager.html");
-});
+
 
 // Auth middleware
 function requireLogin(req, res, next) {
   if (req.session.loggedIn) {
-    next();
+    return next();
+  }
+  const wantsJSON = req.xhr || req.headers.accept?.includes("application/json");
+
+  if (wantsJSON) {
+    return res.status(401).json({ error: "Unauthorized. Please login first." });
   } else {
-    req.session.redirectTo = req.originalUrl; // Save the page they wanted
-    res.redirect("/login.html");
+    req.session.redirectTo = req.originalUrl;
+    return res.redirect("/login.html");
   }
 }
+
 
 // Login route
 app.post("/login", (req, res) => {
@@ -72,7 +76,7 @@ app.post("/login", (req, res) => {
     req.session.loggedIn = true;
 
     // Redirect to saved page or default to /quiz
-    const redirectTo = req.session.redirectTo || "/quiz/quizmanager";
+    const redirectTo = req.session.redirectTo || "/quizmanager";
     delete req.session.redirectTo;
     res.redirect(redirectTo);
 
@@ -106,6 +110,18 @@ app.get("/api/check-auth", (req, res) => {
 app.use("/", generalRoutes);
 app.use("/quiz", requireLogin, quizRoutes);
 app.use("/ask", aiRoutes);
+
+app.get("/quizmanager", requireLogin, (req, res) => {
+  res.sendFile(__dirname + "/templates/quizmanager.html");
+});
+
+// for testing and skipping login
+// app.use("/quiz",  quizRoutes);
+// app.get("/quizmanager", (req, res) => {
+//   res.sendFile(__dirname + "/templates/quizmanager.html");
+// });
+
+app.use(express.static("public/templates"));
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

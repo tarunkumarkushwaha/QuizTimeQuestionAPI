@@ -3,7 +3,7 @@ const router = express.Router();
 const getQuestionModel = require("../models/Question");
 const mongoose = require("mongoose");
 
-router.delete("/deletesubject/:name", async (req, res) => {
+router.delete("/:name", async (req, res) => {
   const collectionName = req.params.name;
 
   try {
@@ -83,7 +83,7 @@ router.put("/:topic/:id", async (req, res) => {
 });
 
 // Delete question by ID
-router.delete("/:topic/:id", async (req, res) => {
+router.delete("/delete/:topic/:id", async (req, res) => {
   try {
     const { topic, id } = req.params;
     const Question = getQuestionModel(topic);
