@@ -3,11 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Login</title>
+  <title>Signup</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+      background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -52,11 +52,11 @@
       border: none;
       font-size: 12px;
       cursor: pointer;
-      color: #4CAF50;
+      color: #E91E63;
     }
 
     button[type="submit"] {
-      background: #4CAF50;
+      background: #E91E63;
       color: white;
       border: none;
       padding: 12px;
@@ -68,7 +68,7 @@
     }
 
     button[type="submit"]:hover {
-      background: #45a049;
+      background: #d81b60;
     }
 
     .link {
@@ -93,18 +93,18 @@
 
 <body>
   <div class="form-box">
-    <h2>Login</h2>
-    <form method="POST" action="/login">
-      <input type="text" name="username" placeholder="Enter username" required>
+    <h2>Sign Up</h2>
+    <form method="POST" action="/signup">
+      <input type="text" name="username" placeholder="Choose username" required>
 
       <div class="password-wrapper">
-        <input id="password" type="password" name="password" placeholder="Enter password" required>
+        <input id="password" type="password" name="password" placeholder="Choose password" required>
         <button type="button" onclick="togglePassword()">Show</button>
       </div>
 
-      <button type="submit">Login</button>
+      <button type="submit">Sign Up</button>
     </form>
-    <a href="/signup.html" class="link">Don’t have an account? Sign up</a>
+    <a href="/login.html" class="link">Already have an account? Login</a>
   </div>
 
   <script>

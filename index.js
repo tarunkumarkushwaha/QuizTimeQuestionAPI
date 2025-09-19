@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const path = require("path");
 const session = require("express-session");
+const User = require("./models/User");
 
 
 const connectDB = require("./db");
@@ -55,9 +56,10 @@ app.use(session({
 
 // Auth middleware
 function requireLogin(req, res, next) {
-  if (req.session.loggedIn) {
+  if (req.session.loggedIn && req.session.userId) {
     return next();
   }
+
   const wantsJSON = req.xhr || req.headers.accept?.includes("application/json");
 
   if (wantsJSON) {
@@ -70,20 +72,56 @@ function requireLogin(req, res, next) {
 
 
 // Login route
-app.post("/login", (req, res) => {
-  const { password } = req.body;
-  if (password === process.env.PASSWORD) {
-    req.session.loggedIn = true;
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-    // Redirect to saved page or default to /quiz
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(401).send("User not found <a href='/login.html'>Try again</a>");
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).send("Wrong password! <a href='/login.html'>Try again</a>");
+    }
+
+    // Save login session
+    req.session.loggedIn = true;
+    req.session.userId = user._id;
+
     const redirectTo = req.session.redirectTo || "/quizmanager";
     delete req.session.redirectTo;
     res.redirect(redirectTo);
 
-  } else {
-    res.send("Wrong password! <a href='/login.html'>Try aagain</a>");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error logging in");
   }
 });
+
+
+// signup route 
+
+app.post("/signup", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).send("User already exists");
+    }
+
+    const user = new User({ username, password });
+    await user.save();
+
+    res.redirect("/login.html");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error creating user");
+  }
+});
+
 
 // Logout route
 app.get("/logout", (req, res) => {
