@@ -1,20 +1,18 @@
 const mongoose = require("mongoose");
 
 const questionSchema = new mongoose.Schema({
-  // _id:{ type: String },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  subject: { type: String, required: true },
   question: { type: String, required: true },
-  option1: { type: String, required: true },
-  option2: { type: String, required: true },
-  option3: { type: String, required: true },
-  option4: { type: String, required: true },
-  correctresponse: { type: String, required: true },
-  time: { type: Number, default: 1 }
+  option1: String,
+  option2: String,
+  option3: String,
+  option4: String,
+  correctresponse: String,
+  time: Number,
+  createdAt: { type: Date, default: Date.now }
 });
 
-function getQuestionModel(topic) {
-  const name = topic.toLowerCase();
-  return mongoose.models[name] || mongoose.model(name, questionSchema, name);
-}
+module.exports = mongoose.model("Question", questionSchema);
 
-module.exports = getQuestionModel;
 
