@@ -24,6 +24,7 @@ app.use(cookieParser());
 
 const allowedOrigins = [
   "https://quiztimefrontend.onrender.com",
+  "https://quizotg.netlify.app",
   "http://localhost:5173",
   // "http://localhost:3000"
 ];
