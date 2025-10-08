@@ -4,8 +4,8 @@ require("dotenv").config();
 const path = require("path");
 const session = require("express-session");
 const User = require("./models/User");
-
-
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const connectDB = require("./db");
 const generalRoutes = require("./routes/general");
 const quizRoutes = require("./routes/quiz");
@@ -18,25 +18,29 @@ app.get("/config", (req, res) => {
   res.json({ port });
 });
 
+app.use(cookieParser());
+
 // CORS config
+
 const allowedOrigins = [
   "https://quiztimefrontend.onrender.com",
   "http://localhost:5173",
-  "http://localhost:3000"
+  // "http://localhost:3000"
 ];
 
 app.use(
   cors({
-    origin: "*", // allow all in dev
-    // origin: function (origin, callback) {
-    //   if (!origin || allowedOrigins.includes(origin)) {
-    //     callback(null, true);
-    //   } else {
-    //     callback(new Error("Not allowed by CORS"));
-    //   }
-    // }
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true // Required for session cookies
   })
 );
+
 
 app.use(express.json());
 
@@ -72,33 +76,48 @@ function requireLogin(req, res, next) {
 
 
 // Login route
+
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-
     const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(401).send("User not found <a href='/login.html'>Try again</a>");
-    }
+    if (!user) return res.status(401).json({ error: "User not found" });
 
     const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).send("Wrong password! <a href='/login.html'>Try again</a>");
-    }
+    if (!isMatch) return res.status(401).json({ error: "Wrong password" });
 
-    // Save login session
-    req.session.loggedIn = true;
-    req.session.userId = user._id;
+    // Generate tokens
+    const accessToken = jwt.sign(
+      { userId: user._id, username: user.username },
+      process.env.ACCESS_SECRET,
+      { expiresIn: "15m" } // short-lived
+    );
 
-    const redirectTo = req.session.redirectTo || "/quizmanager";
-    delete req.session.redirectTo;
-    res.redirect(redirectTo);
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
 
+    const isProduction = process.env.NODE_ENV === "production";
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,     // 7 days
+    });
+
+
+    // Send access token in response
+    res.json({ success: true, accessToken });
   } catch (err) {
     console.error(err);
-    res.status(500).send("Error logging in");
+    res.status(500).json({ error: "Error logging in" });
   }
 });
+
 
 
 // signup route 
@@ -106,33 +125,53 @@ app.post("/login", async (req, res) => {
 app.post("/signup", async (req, res) => {
   try {
     const { username, password } = req.body;
+    if (!username || !password) return res.status(400).send("Missing fields");
+    const existing = await User.findOne({ username });
+    if (existing) return res.status(400).send("Username already taken");
 
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).send("User already exists");
-    }
-
-    const user = new User({ username, password });
-    await user.save();
-
-    res.redirect("/login.html");
+    const hashed = await bcrypt.hash(password, 10);
+    await new User({ username, password: hashed }).save();
+    res.json({ message: "User created successfully" });
   } catch (err) {
     console.error(err);
     res.status(500).send("Error creating user");
   }
 });
 
+app.post("/refresh", (req, res) => {
+  const token = req.cookies.refreshToken;
+
+  if (!token) {
+    // instead of bare 401, send JSON with message
+    return res.status(200).json({ accessToken: null, message: "No refresh token" });
+  }
+
+  jwt.verify(token, process.env.REFRESH_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(200).json({ accessToken: null, message: "Invalid refresh token" });
+    }
+
+    const accessToken = jwt.sign(
+      { userId: decoded.userId },
+      process.env.ACCESS_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    res.json({ accessToken });
+  });
+});
+
+
+
 
 // Logout route
-app.get("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.log(err);
-      return res.send("Error while logging out");
-    }
-    res.clearCookie("connect.sid"); // remove session cookie
-    res.redirect("/login.html"); // back to login
+app.post("/logout", (req, res) => {
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
   });
+  res.json({ message: "Logged out successfully" });
 });
 
 app.get("/api/check-auth", (req, res) => {
