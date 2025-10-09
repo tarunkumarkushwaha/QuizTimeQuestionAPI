@@ -60,20 +60,20 @@ app.use(session({
 
 
 // Auth middleware
-function requireLogin(req, res, next) {
-  if (req.session.loggedIn && req.session.userId) {
-    return next();
-  }
+// function requireLogin(req, res, next) {
+//   if (req.session.loggedIn && req.session.userId) {
+//     return next();
+//   }
 
-  const wantsJSON = req.xhr || req.headers.accept?.includes("application/json");
+//   const wantsJSON = req.xhr || req.headers.accept?.includes("application/json");
 
-  if (wantsJSON) {
-    return res.status(401).json({ error: "Unauthorized. Please login first." });
-  } else {
-    req.session.redirectTo = req.originalUrl;
-    return res.redirect("/login.html");
-  }
-}
+//   if (wantsJSON) {
+//     return res.status(401).json({ error: "Unauthorized. Please login first." });
+//   } else {
+//     req.session.redirectTo = req.originalUrl;
+//     return res.redirect("/login.html");
+//   }
+// }
 
 
 // Login route
@@ -186,12 +186,12 @@ app.get("/api/check-auth", (req, res) => {
 
 // Routes
 app.use("/", generalRoutes);
-app.use("/quiz", requireLogin, quizRoutes);
+app.use("/quiz", quizRoutes);
 app.use("/ask", aiRoutes);
 
-app.get("/quizmanager", requireLogin, (req, res) => {
-  res.sendFile(__dirname + "/templates/quizmanager.html");
-});
+// app.get("/quizmanager", requireLogin, (req, res) => {
+//   res.sendFile(__dirname + "/templates/quizmanager.html");
+// });
 
 // for testing and skipping login
 // app.use("/quiz",  quizRoutes);
@@ -199,7 +199,7 @@ app.get("/quizmanager", requireLogin, (req, res) => {
 //   res.sendFile(__dirname + "/templates/quizmanager.html");
 // });
 
-app.use(express.static("public/templates"));
+// app.use(express.static("public/templates"));
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
