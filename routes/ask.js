@@ -12,7 +12,7 @@ const ai = new GoogleGenAI({
 // Use latest working model
 const MODEL_NAME = "gemini-2.5-flash";
 
-let AIquestions = `[{"question": "question","option1": "optiona","option2": "optionb","option3": "optionc","option4": "optiond","correctresponse": "optiona","time": 1}]`;
+let AIquestions = `[{"question": "any question","option1": "any name a","option2": "any name b","option3": "any name c","option4": "any name d","correctresponse": "any name d","time": 1}]`;
 
 // ROUTE
 router.get("/", async (req, res) => {
