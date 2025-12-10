@@ -10,7 +10,7 @@ const ai = new GoogleGenAI({
 });
 
 // Use latest working model
-const MODEL_NAME = "gemini-1.5-flash-latest";
+const MODEL_NAME = "gemini-2.5-flash";
 
 let AIquestions = `[{"question": "question","option1": "optiona","option2": "optionb","option3": "optionc","option4": "optiond","correctresponse": "optiona","time": 1}]`;
 
@@ -32,7 +32,7 @@ router.get("/", async (req, res) => {
       contents: topic
     });
 
-    const text = result.text(); // new SDK response
+    const text = result.text;
 
     const parsedQuestions = convertJsonString(text);
 
