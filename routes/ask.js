@@ -9,6 +9,19 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 let AIquestions = `[{"question": "question","option1": "optiona","option2": "optionb","option3": "optionc","option4": "optiond","correctresponse": "optiona","time": 1}]`;
 
+// Middleware to verify access token
+function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: "No token provided" });
+
+  const token = authHeader.split(" ")[1]; // Bearer <token>
+  jwt.verify(token, process.env.ACCESS_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ error: "Invalid token" });
+    req.user = decoded;
+    next();
+  });
+}
+
 router.get("/", async (req, res) => {
   try {
     const prompt = req.query.prompt;

@@ -10,6 +10,7 @@ const connectDB = require("./db");
 const generalRoutes = require("./routes/general");
 const quizRoutes = require("./routes/quiz");
 const aiRoutes = require("./routes/ask");
+const discussionRoutes = require("./routes/discussion")
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,6 +27,7 @@ const allowedOrigins = [
   "https://quiztimefrontend.onrender.com",
   "https://quizotg.netlify.app",
   "http://localhost:5173",
+  "http://localhost:8081",
   // "http://localhost:3000"
 ];
 
@@ -50,30 +52,11 @@ app.use(express.json());
 connectDB();
 
 app.use(express.urlencoded({ extended: true }));
-// app.use(express.static("public/templates"));
 app.use(session({
   secret: process.env.PASSWORD,
   resave: false,
   saveUninitialized: true
 }));
-
-
-
-// Auth middleware
-// function requireLogin(req, res, next) {
-//   if (req.session.loggedIn && req.session.userId) {
-//     return next();
-//   }
-
-//   const wantsJSON = req.xhr || req.headers.accept?.includes("application/json");
-
-//   if (wantsJSON) {
-//     return res.status(401).json({ error: "Unauthorized. Please login first." });
-//   } else {
-//     req.session.redirectTo = req.originalUrl;
-//     return res.redirect("/login.html");
-//   }
-// }
 
 
 // Login route
@@ -188,18 +171,7 @@ app.get("/api/check-auth", (req, res) => {
 app.use("/", generalRoutes);
 app.use("/quiz", quizRoutes);
 app.use("/ask", aiRoutes);
-
-// app.get("/quizmanager", requireLogin, (req, res) => {
-//   res.sendFile(__dirname + "/templates/quizmanager.html");
-// });
-
-// for testing and skipping login
-// app.use("/quiz",  quizRoutes);
-// app.get("/quizmanager", (req, res) => {
-//   res.sendFile(__dirname + "/templates/quizmanager.html");
-// });
-
-// app.use(express.static("public/templates"));
+app.use("/discussions", discussionRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
