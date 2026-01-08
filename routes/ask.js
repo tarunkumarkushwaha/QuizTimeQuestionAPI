@@ -9,7 +9,7 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY
 });
 
-// Use latest working model
+// Use latest working model !!!! very importabnt
 const MODEL_NAME = "gemini-2.5-flash";
 
 let AIquestions = `[{"question": "any question","option1": "any name a","option2": "any name b","option3": "any name c","option4": "any name d","correctresponse": "any name d","time": 1}]`;
@@ -46,6 +46,42 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: err.message || "Gemini API failed" });
   }
 });
+router.get("/explain", async (req, res) => {
+  try { 
+    const prompt = req.query.question;
+
+    if (!prompt) {
+      return res.status(400).json({ error: "Prompt required" });
+    }
+
+    const topic = `Explain this question in maximum 300 words:\n${prompt}`;
+
+    const result = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: topic
+    });
+
+   const explanationText =
+      result?.candidates?.[0]?.content?.parts
+        ?.map(p => p.text) 
+        .join("") || ""; 
+
+    // if (!explanationText.trim()) {
+    //   return res.status(500).json({ error: "Empty response from Gemini" });
+    // }
+
+    res.json({
+      question: prompt,
+      explanation: explanationText
+    });
+
+  } catch (err) {
+    console.error("GEMINI ERROR:", err);
+    res.status(500).json({ error: err.message || "Gemini API failed" });
+  }
+});
+
+
 
 module.exports = router;
 

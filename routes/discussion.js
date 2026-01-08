@@ -16,7 +16,6 @@ function verifyToken(req, res, next) {
   });
 }
 
-// ✅ Create a new post
 router.post("/", verifyToken, async (req, res) => {
   try {
     const { content } = req.body;
@@ -26,6 +25,7 @@ router.post("/", verifyToken, async (req, res) => {
       userId: req.user.userId,
       username: req.user.username,
       content,
+      subjectName,
     });
 
     await newPost.save();
@@ -35,7 +35,6 @@ router.post("/", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Get all posts (sorted by latest first)
 router.get("/", verifyToken, async (req, res) => {
   try {
     const posts = await Discussion.find().sort({ createdAt: -1 });
@@ -45,7 +44,6 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Get a single post by ID
 router.get("/:id", verifyToken, async (req, res) => {
   try {
     const post = await Discussion.findById(req.params.id);

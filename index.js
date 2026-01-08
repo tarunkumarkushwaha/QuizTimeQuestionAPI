@@ -11,7 +11,6 @@ const generalRoutes = require("./routes/general");
 const quizRoutes = require("./routes/quiz");
 const aiRoutes = require("./routes/ask");
 const discussionRoutes = require("./routes/discussion")
-const bcrypt = require("bcrypt");
 
 
 const app = express();
@@ -144,7 +143,6 @@ app.post("/refresh", (req, res) => {
   const token = req.cookies.refreshToken;
 
   if (!token) {
-    // instead of bare 401, send JSON with message
     return res.status(200).json({ accessToken: null, message: "No refresh token" });
   }
 
