@@ -11,6 +11,8 @@ const generalRoutes = require("./routes/general");
 const quizRoutes = require("./routes/quiz");
 const aiRoutes = require("./routes/ask");
 const discussionRoutes = require("./routes/discussion")
+const resultRoutes = require("./routes/results")
+const leadersRoutes = require("./routes/leaderboard")
 
 
 const app = express();
@@ -88,7 +90,7 @@ app.post("/login", async (req, res) => {
     );
 
     const refreshToken = jwt.sign(
-      { userId: user._id },
+      { userId: user._id, username: user.username },
       process.env.REFRESH_SECRET,
       { expiresIn: "7d" }
     );
@@ -100,7 +102,7 @@ app.post("/login", async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({ success: true, accessToken });
+    res.json({ success: true, accessToken, refreshToken });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error logging in" });
@@ -152,7 +154,7 @@ app.post("/refresh", (req, res) => {
     }
 
     const accessToken = jwt.sign(
-      { userId: decoded.userId },
+      { userId: decoded.userId, username: decoded.username },
       process.env.ACCESS_SECRET,
       { expiresIn: "15m" }
     );
@@ -187,6 +189,8 @@ app.get("/api/check-auth", (req, res) => {
 app.use("/", generalRoutes);
 app.use("/quiz", quizRoutes);
 app.use("/ask", aiRoutes);
+app.use("/results", resultRoutes);
+app.use("/leaderboard", leadersRoutes);
 app.use("/discussions", discussionRoutes);
 
 app.listen(port, () => {

@@ -2,19 +2,20 @@ const express = require("express");
 const router = express.Router();
 const Discussion = require("../models/Discussion");
 const jwt = require("jsonwebtoken");
+const verifyToken = require("../middleware/verifyToken")
 
 // Middleware to verify access token
-function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: "No token provided" });
+// function verifyToken(req, res, next) {
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader) return res.status(401).json({ error: "No token provided" });
 
-  const token = authHeader.split(" ")[1];
-  jwt.verify(token, process.env.ACCESS_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ error: "Invalid token" });
-    req.user = decoded;
-    next();
-  });
-}
+//   const token = authHeader.split(" ")[1];
+//   jwt.verify(token, process.env.ACCESS_SECRET, (err, decoded) => {
+//     if (err) return res.status(403).json({ error: "Invalid token" });
+//     req.user = decoded;
+//     next();
+//   });
+// }
 
 router.post("/", verifyToken, async (req, res) => {
   try {
@@ -54,7 +55,6 @@ router.get("/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Update post (only if created by same user)
 router.put("/:id", verifyToken, async (req, res) => {
   try {
     const post = await Discussion.findOneAndUpdate(
@@ -69,7 +69,6 @@ router.put("/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Delete post
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
     const deleted = await Discussion.findOneAndDelete({
@@ -83,7 +82,6 @@ router.delete("/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Like a post
 router.post("/:id/like", verifyToken, async (req, res) => {
   try {
     const post = await Discussion.findById(req.params.id);
@@ -97,7 +95,6 @@ router.post("/:id/like", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Add a comment
 router.post("/:id/comment", verifyToken, async (req, res) => {
   try {
     const { text } = req.body;

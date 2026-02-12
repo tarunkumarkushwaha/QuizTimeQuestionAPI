@@ -1,6 +1,7 @@
 const express = require("express");
 const { GoogleGenAI } = require("@google/genai");
 const convertJsonString = require("../utils/parseJson");
+const verifyToken = require("../middleware/verifyToken")
 
 const router = express.Router();
 
@@ -9,13 +10,13 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY
 });
 
-// Use latest working model !!!! very importabnt
+// Use latest working model !!!! very very very importabnt
 const MODEL_NAME = "gemini-2.5-flash";
 
 let AIquestions = `[{"question": "any question","option1": "any name a","option2": "any name b","option3": "any name c","option4": "any name d","correctresponse": "any name d","time": 1}]`;
 
 // ROUTE
-router.get("/", async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
     const prompt = req.query.prompt;
     const count = req.query.count || 10;
@@ -46,8 +47,8 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: err.message || "Gemini API failed" });
   }
 });
-router.get("/explain", async (req, res) => {
-  try { 
+router.get("/explain", verifyToken, async (req, res) => {
+  try {
     const prompt = req.query.question;
 
     if (!prompt) {
@@ -61,10 +62,10 @@ router.get("/explain", async (req, res) => {
       contents: topic
     });
 
-   const explanationText =
+    const explanationText =
       result?.candidates?.[0]?.content?.parts
-        ?.map(p => p.text) 
-        .join("") || ""; 
+        ?.map(p => p.text)
+        .join("") || "";
 
     // if (!explanationText.trim()) {
     //   return res.status(500).json({ error: "Empty response from Gemini" });

@@ -1,20 +1,21 @@
 const express = require("express");
 const router = express.Router();
 const Question = require("../models/Question");
+const verifyToken = require("../middleware/verifyToken")
 const jwt = require("jsonwebtoken");
 
 // Middleware to verify access token
-function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: "No token provided" });
+// function verifyToken(req, res, next) {
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader) return res.status(401).json({ error: "No token provided" });
 
-  const token = authHeader.split(" ")[1]; // Bearer <token>
-  jwt.verify(token, process.env.ACCESS_SECRET, (err, decoded) => {
-    if (err) return res.status(403).json({ error: "Invalid token" });
-    req.user = decoded;
-    next();
-  });
-}
+//   const token = authHeader.split(" ")[1]; // Bearer <token>
+//   jwt.verify(token, process.env.ACCESS_SECRET, (err, decoded) => {
+//     if (err) return res.status(403).json({ error: "Invalid token" });
+//     req.user = decoded;
+//     next();
+//   });
+// }
 
 // Delete all questions of a subject for the logged-in user
 router.delete("/:subject", verifyToken, async (req, res) => {
