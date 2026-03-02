@@ -2,7 +2,9 @@ const express = require("express");
 const { GoogleGenAI } = require("@google/genai");
 const convertJsonString = require("../utils/parseJson");
 const verifyToken = require("../middleware/verifyToken")
-
+const multer = require('multer');
+const fs = require('fs');
+const upload = multer({ dest: 'uploads/' });
 const router = express.Router();
 
 // Initialize Gemini (NO key? pass inside constructor)
@@ -81,6 +83,131 @@ router.get("/explain", verifyToken, async (req, res) => {
     res.status(500).json({ error: err.message || "Gemini API failed" });
   }
 });
+
+
+// pdf upload
+
+// Convert file to Gemini format
+function fileToGenerativePart(path, mimeType) {
+  return {
+    inlineData: {
+      data: Buffer.from(fs.readFileSync(path)).toString("base64"),
+      mimeType,
+    },
+  };
+}
+
+// Extract JSON array safely from AI response
+function extractJSONArray(text) {
+  try {
+    const match = text.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error("No JSON array found");
+    return JSON.parse(match[0]);
+  } catch (err) {
+    console.error("JSON Parse Error:", err);
+    throw new Error("Invalid JSON returned from AI");
+  }
+}
+
+// Safe file delete
+function safeDelete(path) {
+  try {
+    if (path && fs.existsSync(path)) {
+      fs.unlinkSync(path);
+    }
+  } catch (err) {
+    console.error("File delete error:", err);
+  }
+}
+
+// Route
+router.post(
+  "/generate-from-pdf",
+  upload.single("pdf"),
+  verifyToken,
+  async (req, res) => {
+    let filePath = null;
+
+    try {
+      const { count = 10 } = req.body;
+      const pdfFile = req.file;
+
+      if (!pdfFile) {
+        return res.status(400).json({
+          error: "PDF file is required",
+        });
+      }
+
+      filePath = pdfFile.path;
+
+      const pdfPart = fileToGenerativePart(filePath, "application/pdf");
+
+      const prompt = `
+Based on the attached PDF, generate ${count} interview questions.
+
+Return ONLY a valid JSON array.
+Do not include markdown.
+Do not include explanation.
+
+Format example:
+${AIquestions}
+`;
+
+      const result = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: [
+          {
+            role: "user",
+            parts: [pdfPart, { text: prompt }],
+          },
+        ],
+      });
+
+      const text =
+        result?.candidates?.[0]?.content?.parts?.[0]?.text ||
+        result?.response?.text() ||
+        "";
+
+      const parsedQuestions = extractJSONArray(text);
+
+      //       let parsedQuestions = [
+      //   {
+      //     "question": "What is the SI derived unit of electric charge?",
+      //     "option1": "Ampere",
+      //     "option2": "Volt",
+      //     "option3": "Coulomb",
+      //     "option4": "Ohm",
+      //     "correctresponse": "Coulomb",
+      //     "time": 1
+      //   },
+      //   {
+      //     "question": "Who was the first to note the discrete nature of electric charge in electrolysis experiments?",
+      //     "option1": "Charles-François de Cisternay du Fay",
+      //     "option2": "Benjamin Franklin",
+      //     "option3": "Michael Faraday",
+      //     "option4": "Robert Millikan",
+      //     "correctresponse": "Michael Faraday",
+      //     "time": 1
+      //   }
+      // ]
+
+      res.json({
+        success: true,
+        count: parsedQuestions.length,
+        questions: parsedQuestions,
+      });
+    } catch (err) {
+      console.error("GEMINI ERROR:", err);
+
+      res.status(500).json({
+        success: false,
+        error: "Failed to process PDF",
+      });
+    } finally {
+      safeDelete(filePath);
+    }
+  }
+);
 
 
 
