@@ -1,8 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const path = require("path");
-const session = require("express-session");
+// const path = require("path");
+// const session = require("express-session");
 const User = require("./models/User");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
@@ -13,25 +13,43 @@ const aiRoutes = require("./routes/ask");
 const discussionRoutes = require("./routes/discussion")
 const resultRoutes = require("./routes/results")
 const leadersRoutes = require("./routes/leaderboard")
-
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const verifyToken = require("./middleware/verifyToken");
 
 const app = express();
-const port = process.env.PORT || 3000;
+app.use(express.json());
+app.use(helmet());
+app.use(cookieParser());
 
-app.get("/config", (req, res) => {
-  res.json({ port });
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // Max 10 attempts per 15 mins
+  message: "Too many attempts, try again later."
 });
 
-app.use(cookieParser());
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+const port = process.env.PORT || 3000;
+
+// for testing only
+// app.get("/config", (req, res) => {
+//   res.json({ port });
+// });
 
 // CORS config
 
 const allowedOrigins = [
   "https://quiztimefrontend.onrender.com",
   "https://quizotg.netlify.app",
-  "http://localhost:5173",
-  "http://localhost:8081",
-  // "http://localhost:3000"
+  "http://localhost:5173",  // turn off in dev pls
+  "http://localhost:8081",   // turn off in dev pls
+  // "http://localhost:3000"   // turn off in dev pls
 ];
 
 app.use(
@@ -47,26 +65,24 @@ app.use(
   })
 );
 
-
-app.use(express.json());
-
-
 // Connect DB
 connectDB();
 
 app.use(express.urlencoded({ extended: true }));
-app.use(session({
-  secret: process.env.PASSWORD,
-  resave: false,
-  saveUninitialized: true
-}));
+// app.use(session({
+//   secret: process.env.PASSWORD,
+//   resave: false,
+//   saveUninitialized: true
+// }));
 
 
 // Login route
 
-app.post("/login", async (req, res) => {
+app.post("/login", authLimiter, async (req, res) => {
   try {
-    const { username, password } = req.body;
+    // const { username, password } = req.body;
+    const username = req.body.username ? String(req.body.username).trim() : null;
+    const password = req.body.password ? String(req.body.password) : null;
 
     if (!username || !password) {
       return res.status(400).json({ error: "Missing fields" });
@@ -95,14 +111,9 @@ app.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS);
 
-    res.json({ success: true, accessToken, refreshToken });
+    res.json({ success: true, accessToken });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error logging in" });
@@ -112,9 +123,10 @@ app.post("/login", async (req, res) => {
 
 // signup route 
 
-app.post("/signup", async (req, res) => {
+app.post("/signup", authLimiter, async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const username = req.body.username ? String(req.body.username).trim() : null;
+    const password = req.body.password ? String(req.body.password) : null;
 
     if (!username || !password) {
       return res.status(400).json({ error: "Missing fields" });
@@ -134,7 +146,7 @@ app.post("/signup", async (req, res) => {
 
     res.json({ message: "User created successfully" });
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     res.status(500).json({ error: "Error creating user" });
   }
 });
@@ -150,7 +162,8 @@ app.post("/refresh", (req, res) => {
 
   jwt.verify(token, process.env.REFRESH_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(200).json({ accessToken: null, message: "Invalid refresh token" });
+      res.clearCookie("refreshToken", COOKIE_OPTIONS);
+      return res.status(401).json({ accessToken: null });
     }
 
     const accessToken = jwt.sign(
@@ -168,20 +181,18 @@ app.post("/refresh", (req, res) => {
 
 // Logout route
 app.post("/logout", (req, res) => {
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-  });
+  res.clearCookie("refreshToken", COOKIE_OPTIONS);
   res.json({ message: "Logged out successfully" });
 });
 
-app.get("/api/check-auth", (req, res) => {
-  if (req.session.loggedIn) {
-    res.json({ loggedIn: true });
-  } else {
-    res.json({ loggedIn: false });
-  }
+app.get("/api/check-auth", verifyToken, (req, res) => {
+  res.json({
+    loggedIn: true,
+    user: {
+      userId: req.user.userId,
+      username: req.user.username
+    }
+  });
 });
 
 
@@ -195,4 +206,9 @@ app.use("/discussions", discussionRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Something went wrong!" });
 });

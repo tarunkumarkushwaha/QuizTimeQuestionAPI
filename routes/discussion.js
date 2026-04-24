@@ -4,19 +4,6 @@ const Discussion = require("../models/Discussion");
 const jwt = require("jsonwebtoken");
 const verifyToken = require("../middleware/verifyToken")
 
-// Middleware to verify access token
-// function verifyToken(req, res, next) {
-//   const authHeader = req.headers.authorization;
-//   if (!authHeader) return res.status(401).json({ error: "No token provided" });
-
-//   const token = authHeader.split(" ")[1];
-//   jwt.verify(token, process.env.ACCESS_SECRET, (err, decoded) => {
-//     if (err) return res.status(403).json({ error: "Invalid token" });
-//     req.user = decoded;
-//     next();
-//   });
-// }
-
 router.post("/", verifyToken, async (req, res) => {
   try {
     const { content } = req.body;

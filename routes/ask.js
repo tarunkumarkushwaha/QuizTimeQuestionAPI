@@ -4,7 +4,40 @@ const convertJsonString = require("../utils/parseJson");
 const verifyToken = require("../middleware/verifyToken")
 const multer = require('multer');
 const fs = require('fs');
-const upload = multer({ dest: 'uploads/' });
+const rateLimit = require("express-rate-limit");
+
+const textAiLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 10,
+  keyGenerator: (req) => req.user.userId,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: "Text generation limit reached. Try again in 10 minutes."
+    });
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const pdfAiLimiter = rateLimit({
+  windowMs: 30 * 60 * 1000, // 30 minutes
+  max: 3,
+  keyGenerator: (req) => req.user.userId,
+  handler: (req, res) => {
+    res.status(429).json({
+      error: "PDF processing is heavy! Please wait 30 minutes before the next upload."
+    });
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // Limit PDF to 5MB
+});
+
 const router = express.Router();
 
 // Initialize Gemini (NO key? pass inside constructor)
@@ -18,7 +51,7 @@ const MODEL_NAME = "gemini-2.5-flash";
 let AIquestions = `[{"question": "any question","option1": "any name a","option2": "any name b","option3": "any name c","option4": "any name d","correctresponse": "any name d","time": 1}]`;
 
 // ROUTE
-router.get("/", verifyToken, async (req, res) => {
+router.get("/", verifyToken, textAiLimiter, async (req, res) => {
   try {
     const prompt = req.query.prompt;
     const count = req.query.count || 10;
@@ -125,6 +158,7 @@ router.post(
   "/generate-from-pdf",
   upload.single("pdf"),
   verifyToken,
+  pdfAiLimiter,
   async (req, res) => {
     let filePath = null;
 

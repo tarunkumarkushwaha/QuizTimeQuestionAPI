@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const path = require("path");
+const rateLimit = require("express-rate-limit");
 const getquestion = require("../controlers/generalroutecontroler")
 
 router.get("/hello", (req, res) => {
@@ -17,7 +18,15 @@ router.get("/", (req, res) => {
 // });
 
 // load question data dynamically
-router.get("/questions/:topic", getquestion);
+
+const publicLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100, 
+  message: { error: "Too many requests, take a breather!" }
+});
+
+router.get("/questions/:topic", publicLimiter, getquestion);
+// router.get("/questions/:topic", getquestion);
 
 module.exports = router;
 

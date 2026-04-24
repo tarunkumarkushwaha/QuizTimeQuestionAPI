@@ -29,19 +29,21 @@ const quizResultSchema = new mongoose.Schema(
       required: true,
     },
     timeTaken: {
-      type: Number, 
+      type: Number,
       required: true,
     },
     accuracy: {
-      type: Number, 
-    },
+      type: Number,
+    }
   },
   { timestamps: true }
 );
 
 // Auto-calc accuracy
 quizResultSchema.pre("save", function (next) {
-  this.accuracy = (this.correctAnswers / this.totalQuestions) * 100;
+  this.accuracy = this.totalQuestions > 0
+    ? (this.correctAnswers / this.totalQuestions) * 100
+    : 0;
   next();
 });
 
