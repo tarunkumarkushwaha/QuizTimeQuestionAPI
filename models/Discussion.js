@@ -18,10 +18,8 @@ const discussionSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  likes: {
-    type: Number,
-    default: 0,
-  },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   comments: [
     {
       userId: String,
