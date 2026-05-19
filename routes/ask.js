@@ -1,10 +1,75 @@
 const express = require("express");
 const { GoogleGenAI } = require("@google/genai");
 const convertJsonString = require("../utils/parseJson");
-const verifyToken = require("../middleware/verifyToken")
-const multer = require('multer');
-const fs = require('fs');
+const verifyToken = require("../middleware/verifyToken");
+const multer = require("multer");
+const fs = require("fs");
 const rateLimit = require("express-rate-limit");
+
+const convertInterviewReview = (text) => {
+  try {
+    let cleaned = text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      overallScore: parsed.overallScore || 0,
+
+      result: parsed.result || "Not Evaluated",
+
+      message:
+        parsed.message || "No interview feedback available.",
+
+      strengths: Array.isArray(parsed.strengths)
+        ? parsed.strengths
+        : [],
+
+      weaknesses: Array.isArray(parsed.weaknesses)
+        ? parsed.weaknesses
+        : [],
+
+      reviews: Array.isArray(parsed.reviews)
+        ? parsed.reviews.map((item, index) => ({
+            id: index + 1,
+
+            question: item.question || "No question",
+
+            userAnswer:
+              item.userAnswer?.trim() || "No answer provided",
+
+            score:
+              typeof item.score === "number"
+                ? item.score
+                : 0,
+
+            feedback:
+              item.feedback || "No feedback available",
+
+            status:
+              item.score >= 7
+                ? "Strong"
+                : item.score >= 4
+                ? "Average"
+                : "Weak",
+          }))
+        : [],
+    };
+  } catch (err) {
+    console.error("Interview Review Parse Error:", err);
+
+    return {
+      overallScore: 0,
+      result: "Error",
+      message: "Failed to process interview review.",
+      strengths: [],
+      weaknesses: [],
+      reviews: [],
+    };
+  }
+};
 
 const textAiLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
@@ -12,7 +77,7 @@ const textAiLimiter = rateLimit({
   keyGenerator: (req) => req.user.userId,
   handler: (req, res) => {
     res.status(429).json({
-      error: "Text generation limit reached. Try again in 10 minutes."
+      error: "Text generation limit reached. Try again in 10 minutes.",
     });
   },
   standardHeaders: true,
@@ -25,7 +90,8 @@ const pdfAiLimiter = rateLimit({
   keyGenerator: (req) => req.user.userId,
   handler: (req, res) => {
     res.status(429).json({
-      error: "PDF processing is heavy! Please wait 30 minutes before the next upload."
+      error:
+        "PDF processing is heavy! Please wait 30 minutes before the next upload.",
     });
   },
   standardHeaders: true,
@@ -35,14 +101,14 @@ const pdfAiLimiter = rateLimit({
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // Limit PDF to 5MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // Limit PDF to 5MB
 });
 
 const router = express.Router();
 
 // Initialize Gemini (NO key? pass inside constructor)
 const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
+  apiKey: process.env.GEMINI_API_KEY,
 });
 
 // Use latest working model !!!! very very very importabnt
@@ -65,7 +131,7 @@ router.get("/", verifyToken, textAiLimiter, async (req, res) => {
     // NEW SDK FORMAT
     const result = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: topic
+      contents: topic,
     });
 
     const text = result.text;
@@ -74,9 +140,8 @@ router.get("/", verifyToken, textAiLimiter, async (req, res) => {
 
     res.json({
       time: parsedQuestions.length,
-      question: parsedQuestions
+      question: parsedQuestions,
     });
-
   } catch (err) {
     console.error("GEMINI ERROR:", err);
     res.status(500).json({ error: err.message || "Gemini API failed" });
@@ -94,13 +159,12 @@ router.get("/explain", verifyToken, async (req, res) => {
 
     const result = await ai.models.generateContent({
       model: MODEL_NAME,
-      contents: topic
+      contents: topic,
     });
 
     const explanationText =
-      result?.candidates?.[0]?.content?.parts
-        ?.map(p => p.text)
-        .join("") || "";
+      result?.candidates?.[0]?.content?.parts?.map((p) => p.text).join("") ||
+      "";
 
     // if (!explanationText.trim()) {
     //   return res.status(500).json({ error: "Empty response from Gemini" });
@@ -108,15 +172,13 @@ router.get("/explain", verifyToken, async (req, res) => {
 
     res.json({
       question: prompt,
-      explanation: explanationText
+      explanation: explanationText,
     });
-
   } catch (err) {
     console.error("GEMINI ERROR:", err);
     res.status(500).json({ error: err.message || "Gemini API failed" });
   }
 });
-
 
 // pdf upload
 
@@ -240,16 +302,139 @@ ${AIquestions}
     } finally {
       safeDelete(filePath);
     }
-  }
+  },
 );
 
+router.post(
+  "/interview/generate",
+  verifyToken,
+  textAiLimiter,
+  async (req, res) => {
+    try {
+      const { role, level, type = "mixed", count = 5 } = req.body;
 
+      if (!role || !level) {
+        return res.status(400).json({
+          error: "Role and level are required",
+        });
+      }
+
+      const prompt = `
+Generate ${count} realistic interview questions.
+
+Role: ${role}
+Experience Level: ${level}
+Question Type: ${type}
+
+Rules:
+- Return JSON array only
+- Include coding and theoretical questions
+- Keep questions concise
+- No explanations
+- Format:
+[
+ {
+   "question": "",
+   "type": "coding/theory"
+ }
+]
+`;
+
+      const result = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+      });
+
+      const text = result.text;
+
+      const parsedQuestions = convertJsonString(text);
+
+      res.json({
+        total: parsedQuestions.length,
+        questions: parsedQuestions,
+      });
+    } catch (err) {
+      console.error(err);
+
+      res.status(500).json({
+        error: err.message,
+      });
+    }
+  },
+);
+
+router.post(
+  "/interview/review",
+  verifyToken,
+  textAiLimiter,
+  async (req, res) => {
+    try {
+      const { role, level, answers } = req.body;
+
+      if (!answers || !Array.isArray(answers)) {
+        return res.status(400).json({
+          error: "Answers are required",
+        });
+      }
+
+      const prompt = `
+You are a technical interviewer.
+
+Review these interview answers for:
+Role: ${role}
+Level: ${level}
+
+Evaluate:
+- Technical accuracy
+- Communication clarity
+- Problem solving
+- Coding knowledge
+
+Return JSON only in this format:
+
+{
+  "overallScore": 0/100,
+  "result": "Selected/Not Selected",
+  "message": "",
+  "strengths": [],
+  "weaknesses": [],
+  "reviews": [
+    {
+      "question": "",
+      "userAnswer": "",
+      "score": 0,
+      "feedback": ""
+    }
+  ]
+}
+
+Interview Answers:
+${JSON.stringify(answers)}
+`;
+
+      const result = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+      });
+
+      const text = result.text;
+
+      const parsedReview = convertInterviewReview(text);
+
+      res.json(parsedReview);
+    } catch (err) {
+      console.error(err);
+
+      res.status(500).json({
+        error: err.message,
+      });
+    }
+  },
+);
 
 module.exports = router;
 
-
 // old code
-
 
 // const express = require("express");
 // const { GoogleGenerativeAI } = require("@google/generative-ai");
