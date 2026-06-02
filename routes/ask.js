@@ -388,7 +388,6 @@ Evaluate:
 - Technical accuracy
 - Communication clarity
 - Problem solving
-- Coding knowledge
 
 Return JSON only in this format:
 
