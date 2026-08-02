@@ -10,12 +10,13 @@ const connectDB = require("./db");
 const generalRoutes = require("./routes/general");
 const quizRoutes = require("./routes/quiz");
 const aiRoutes = require("./routes/ask");
-const discussionRoutes = require("./routes/discussion")
-const resultRoutes = require("./routes/results")
-const leadersRoutes = require("./routes/leaderboard")
+const discussionRoutes = require("./routes/discussion");
+const resultRoutes = require("./routes/results");
+const leadersRoutes = require("./routes/leaderboard");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const verifyToken = require("./middleware/verifyToken");
+const visitorTracker = require("./middleware/visitorTracker");
 
 const app = express();
 app.use(express.json());
@@ -25,7 +26,7 @@ app.use(cookieParser());
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10, // Max 10 attempts per 15 mins
-  message: "Too many attempts, try again later."
+  message: "Too many attempts, try again later.",
 });
 
 const COOKIE_OPTIONS = {
@@ -47,7 +48,7 @@ const port = process.env.PORT || 3000;
 const allowedOrigins = [
   "https://quiztimefrontend.onrender.com",
   "https://quizotg.netlify.app",
-  // "http://localhost:5173",  // turn off in dev pls
+  // "http://localhost:5173", // turn off in dev pls
   // "http://localhost:8081",   // turn off in dev pls
   // "http://localhost:3000"   // turn off in dev pls
 ];
@@ -61,8 +62,8 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true // Required for session cookies
-  })
+    credentials: true, // Required for session cookies
+  }),
 );
 
 // Connect DB
@@ -75,13 +76,14 @@ app.use(express.urlencoded({ extended: true }));
 //   saveUninitialized: true
 // }));
 
-
 // Login route
 
-app.post("/login", authLimiter, async (req, res) => {
+app.post("/login", authLimiter, visitorTracker, async (req, res) => {
   try {
     // const { username, password } = req.body;
-    const username = req.body.username ? String(req.body.username).trim() : null;
+    const username = req.body.username
+      ? String(req.body.username).trim()
+      : null;
     const password = req.body.password ? String(req.body.password) : null;
 
     if (!username || !password) {
@@ -102,13 +104,13 @@ app.post("/login", authLimiter, async (req, res) => {
     const accessToken = jwt.sign(
       { userId: user._id, username: user.username },
       process.env.ACCESS_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "15m" },
     );
 
     const refreshToken = jwt.sign(
       { userId: user._id, username: user.username },
       process.env.REFRESH_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS);
@@ -120,12 +122,13 @@ app.post("/login", authLimiter, async (req, res) => {
   }
 });
 
-
-// signup route 
+// signup route
 
 app.post("/signup", authLimiter, async (req, res) => {
   try {
-    const username = req.body.username ? String(req.body.username).trim() : null;
+    const username = req.body.username
+      ? String(req.body.username).trim()
+      : null;
     const password = req.body.password ? String(req.body.password) : null;
 
     if (!username || !password) {
@@ -139,7 +142,7 @@ app.post("/signup", authLimiter, async (req, res) => {
 
     const user = new User({
       username,
-      password: password.trim()
+      password: password.trim(),
     });
 
     await user.save();
@@ -151,13 +154,13 @@ app.post("/signup", authLimiter, async (req, res) => {
   }
 });
 
-
-
 app.post("/refresh", (req, res) => {
   const token = req.cookies.refreshToken;
 
   if (!token) {
-    return res.status(200).json({ accessToken: null, message: "No refresh token" });
+    return res
+      .status(200)
+      .json({ accessToken: null, message: "No refresh token" });
   }
 
   jwt.verify(token, process.env.REFRESH_SECRET, (err, decoded) => {
@@ -169,15 +172,12 @@ app.post("/refresh", (req, res) => {
     const accessToken = jwt.sign(
       { userId: decoded.userId, username: decoded.username },
       process.env.ACCESS_SECRET,
-      { expiresIn: "15m" }
+      { expiresIn: "15m" },
     );
 
     res.json({ accessToken });
   });
 });
-
-
-
 
 // Logout route
 app.post("/logout", (req, res) => {
@@ -190,11 +190,10 @@ app.get("/api/check-auth", verifyToken, (req, res) => {
     loggedIn: true,
     user: {
       userId: req.user.userId,
-      username: req.user.username
-    }
+      username: req.user.username,
+    },
   });
 });
-
 
 // Routes
 app.use("/", generalRoutes);
