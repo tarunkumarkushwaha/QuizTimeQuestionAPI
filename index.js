@@ -11,6 +11,7 @@ const generalRoutes = require("./routes/general");
 const quizRoutes = require("./routes/quiz");
 const aiRoutes = require("./routes/ask");
 const discussionRoutes = require("./routes/discussion");
+const profileRoutes = require("./routes/profile");
 const resultRoutes = require("./routes/results");
 const leadersRoutes = require("./routes/leaderboard");
 const helmet = require("helmet");
@@ -48,7 +49,7 @@ const port = process.env.PORT || 3000;
 const allowedOrigins = [
   "https://quiztimefrontend.onrender.com",
   "https://quizotg.netlify.app",
-  // "http://localhost:5173", // turn off in dev pls
+  "http://localhost:5173", // turn off in dev pls
   // "http://localhost:8081",   // turn off in dev pls
   // "http://localhost:3000"   // turn off in dev pls
 ];
@@ -202,6 +203,7 @@ app.use("/ask", aiRoutes);
 app.use("/results", resultRoutes);
 app.use("/leaderboard", leadersRoutes);
 app.use("/discussions", discussionRoutes);
+app.use("/profile", profileRoutes);
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

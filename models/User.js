@@ -1,10 +1,43 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
-});
+const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+
+    password: {
+      type: String,
+      required: true,
+    },
+
+    profile: {
+      displayName: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+
+      bio: {
+        type: String,
+        trim: true,
+        maxlength: 500,
+        default: "",
+      },
+
+      profilePic: {
+        type: String,
+        default: "",
+      },
+
+    },
+  },
+  { timestamps: true }
+);
 
 // Hashng password
 userSchema.pre("save", async function (next) {
