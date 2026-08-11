@@ -14,29 +14,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
-    profile: {
-      displayName: {
-        type: String,
-        trim: true,
-        default: "",
-      },
-
-      bio: {
-        type: String,
-        trim: true,
-        maxlength: 500,
-        default: "",
-      },
-
-      profilePic: {
-        type: String,
-        default: "",
-      },
-
-    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Hashng password
