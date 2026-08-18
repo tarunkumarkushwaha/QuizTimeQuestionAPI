@@ -49,8 +49,8 @@ const port = process.env.PORT || 3000;
 const allowedOrigins = [
   "https://quiztimefrontend.onrender.com",
   "https://quizotg.netlify.app",
-  "http://localhost:5173", // turn off in dev pls
-  // "http://localhost:8081",   // turn off in dev pls
+  // "http://localhost:5173", // turn off in dev pls
+  "http://localhost:8081",   // turn off in dev pls
   // "http://localhost:3000"   // turn off in dev pls
 ];
 
