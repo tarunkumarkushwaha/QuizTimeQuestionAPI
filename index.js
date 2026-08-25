@@ -46,6 +46,8 @@ const port = process.env.PORT || 3000;
 
 // CORS config
 
+// const allowedOrigins = process.env.ALLOWED_ORIGINS
+
 const allowedOrigins = [
   "https://quiztimefrontend.onrender.com",
   "https://quizotg.netlify.app",
@@ -105,7 +107,7 @@ app.post("/login", authLimiter, visitorTracker, async (req, res) => {
     const accessToken = jwt.sign(
       { userId: user._id, username: user.username },
       process.env.ACCESS_SECRET,
-      { expiresIn: "15m" },
+      { expiresIn: "1d" },
     );
 
     const refreshToken = jwt.sign(
