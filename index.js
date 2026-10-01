@@ -207,11 +207,20 @@ app.use("/leaderboard", leadersRoutes);
 app.use("/discussions", discussionRoutes);
 app.use("/profile", profileRoutes);
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`Server running on port ${port}`);
+// });
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: "Something went wrong!" });
 });
+
+// ONLY start listening if file is executed directly (node index.js), NOT imported by Jest
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
+}
+
+module.exports = app;
